@@ -1,37 +1,31 @@
 import { auth, signIn, signOut } from "@/shared/lib/auth";
+import { prisma } from "@/shared/lib/prisma";
+import { Hero } from "@/features/marketing/components/Hero";
 
 export default async function HomePage() {
   const session = await auth();
+  const predictionCount = await prisma.prediction.count();
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center gap-4">
-      <p className="text-[var(--color-text-secondary)] text-sm">
-        matchIQ — {session ? `signed in as ${session.user?.name}` : "not signed in"}
-      </p>
+    <main className="min-h-screen">
+      <nav className="flex justify-between items-center p-6 max-w-5xl mx-auto">
+        <span className="text-sm text-[var(--color-text-primary)] font-medium">matchIQ</span>
+        {session ? (
+          <form action={async () => { "use server"; await signOut(); }}>
+            <button className="text-xs text-[var(--color-text-secondary)]">
+              Sign out
+            </button>
+          </form>
+        ) : (
+          <form action={async () => { "use server"; await signIn("google"); }}>
+            <button className="text-xs text-[var(--color-text-secondary)]">
+              Sign in
+            </button>
+          </form>
+        )}
+      </nav>
 
-      {session ? (
-        <form
-          action={async () => {
-            "use server";
-            await signOut();
-          }}
-        >
-          <button className="glass px-4 py-2 text-sm text-[var(--color-text-primary)]">
-            Sign out
-          </button>
-        </form>
-      ) : (
-        <form
-          action={async () => {
-            "use server";
-            await signIn("google");
-          }}
-        >
-          <button className="glass px-4 py-2 text-sm text-[var(--color-text-primary)]">
-            Sign in with Google
-          </button>
-        </form>
-      )}
+      <Hero predictionCount={predictionCount} />
     </main>
   );
 }

@@ -18,14 +18,18 @@ const tabs = [
 export default async function MatchesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; team?: string }>;
 }) {
   const params = await searchParams;
   const activeTab = params.status ?? "upcoming";
   const status = statusMap[activeTab] ?? MatchStatus.SCHEDULED;
+  const teamId = params.team;
 
   const matches = await prisma.match.findMany({
-    where: { status },
+    where: {
+      status,
+      ...(teamId ? { OR: [{ homeTeamId: teamId }, { awayTeamId: teamId }] } : {}),
+    },
     include: {
       homeTeam: true,
       awayTeam: true,
@@ -42,7 +46,7 @@ export default async function MatchesPage({
         {tabs.map((tab) => (
           <Link
             key={tab.key}
-            href={`/matches?status=${tab.key}`}
+            href={`/matches?status=${tab.key}${teamId ? `&team=${teamId}` : ""}`}
             className={
               tab.key === activeTab
                 ? "text-[var(--color-accent)]"
@@ -53,6 +57,15 @@ export default async function MatchesPage({
           </Link>
         ))}
       </div>
+
+      {teamId && (
+        <Link
+          href={`/matches?status=${activeTab}`}
+          className="inline-block mb-4 text-[11px] text-[var(--color-text-muted)]"
+        >
+          ✕ clear team filter
+        </Link>
+      )}
 
       {matches.length === 0 ? (
         <p className="text-[var(--color-text-muted)] text-sm">
@@ -67,14 +80,4 @@ export default async function MatchesPage({
                 homeTeamName={match.homeTeam.name}
                 awayTeamName={match.awayTeam.name}
                 homeCrestUrl={match.homeTeam.crestUrl}
-                awayCrestUrl={match.awayTeam.crestUrl}
-                homeScore={match.homeScore}
-                awayScore={match.awayScore}
-              />
-            </Link>
-          ))}
-        </div>
-      )}
-    </main>
-  );
-}
+                awayCrestUrl={match.awayT
