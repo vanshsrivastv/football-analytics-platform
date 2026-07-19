@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/shared/lib/prisma";
+import { auth } from "@/shared/lib/auth";
 import { TeamCrest } from "@/shared/components/TeamCrest";
 import { ScoreDisplay } from "@/shared/components/ScoreDisplay";
 import { ProbabilityBar } from "@/shared/components/ProbabilityBar";
+import { FavoriteButton } from "@/features/favorites/components/FavoriteButton";
 import { activePredictor } from "@/features/predictions/engine";
 
 export default async function MatchDetailPage({
@@ -11,6 +13,7 @@ export default async function MatchDetailPage({
   params: Promise<{ matchId: string }>;
 }) {
   const { matchId } = await params;
+  const session = await auth();
 
   const match = await prisma.match.findUnique({
     where: { id: matchId },
@@ -25,6 +28,17 @@ export default async function MatchDetailPage({
   if (!match) {
     notFound();
   }
+
+  const favoritedTeamIds = session?.user?.id
+    ? (
+        await prisma.favorite.findMany({
+          where: {
+            userId: session.user.id,
+            teamId: { in: [match.homeTeamId, match.awayTeamId] },
+          },
+        })
+      ).map((f) => f.teamId)
+    : [];
 
   const headToHead = await prisma.match.findMany({
     where: {
@@ -86,6 +100,12 @@ export default async function MatchDetailPage({
           <span className="text-sm text-[var(--color-text-primary)]">
             {match.homeTeam.name}
           </span>
+          {session && (
+            <FavoriteButton
+              teamId={match.homeTeamId}
+              initiallyFavorited={favoritedTeamIds.includes(match.homeTeamId)}
+            />
+          )}
         </div>
         <ScoreDisplay homeScore={match.homeScore} awayScore={match.awayScore} />
         <div className="flex flex-col items-center gap-2 w-24">
@@ -93,6 +113,12 @@ export default async function MatchDetailPage({
           <span className="text-sm text-[var(--color-text-primary)]">
             {match.awayTeam.name}
           </span>
+          {session && (
+            <FavoriteButton
+              teamId={match.awayTeamId}
+              initiallyFavorited={favoritedTeamIds.includes(match.awayTeamId)}
+            />
+          )}
         </div>
       </div>
 
