@@ -61,16 +61,17 @@ export default async function MatchesPage({
       ) : (
         <div className="flex flex-wrap gap-4">
           {matches.map((match) => (
-            <MatchCard
-              key={match.id}
-              competitionLabel={match.season.competition.name}
-              homeTeamName={match.homeTeam.name}
-              awayTeamName={match.awayTeam.name}
-              homeCrestUrl={match.homeTeam.crestUrl}
-              awayCrestUrl={match.awayTeam.crestUrl}
-              homeScore={match.homeScore}
-              awayScore={match.awayScore}
-            />
+            <Link key={match.id} href={`/matches/${match.id}`}>
+              <MatchCard
+                competitionLabel={match.season.competition.name}
+                homeTeamName={match.homeTeam.name}
+                awayTeamName={match.awayTeam.name}
+                homeCrestUrl={match.homeTeam.crestUrl}
+                awayCrestUrl={match.awayTeam.crestUrl}
+                homeScore={match.homeScore}
+                awayScore={match.awayScore}
+              />
+            </Link>
           ))}
         </div>
       )}
