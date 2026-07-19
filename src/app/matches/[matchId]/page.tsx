@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/shared/lib/prisma";
 import { TeamCrest } from "@/shared/components/TeamCrest";
 import { ScoreDisplay } from "@/shared/components/ScoreDisplay";
+import { ProbabilityBar } from "@/shared/components/ProbabilityBar";
+import { activePredictor } from "@/features/predictions/engine";
 
 export default async function MatchDetailPage({
   params,
@@ -37,6 +39,41 @@ export default async function MatchDetailPage({
     include: { homeTeam: true, awayTeam: true },
   });
 
+  const [homeStanding, awayStanding] = await Promise.all([
+    prisma.standing.findFirst({
+      where: { teamId: match.homeTeamId, seasonId: match.seasonId },
+    }),
+    prisma.standing.findFirst({
+      where: { teamId: match.awayTeamId, seasonId: match.seasonId },
+    }),
+  ]);
+
+  const headToHeadSummary = headToHead.reduce(
+    (acc, m) => {
+      if (m.homeScore === null || m.awayScore === null) {
+        return acc;
+      }
+      const homeWasOurHomeTeam = m.homeTeamId === match.homeTeamId;
+      if (m.homeScore === m.awayScore) {
+        acc.draws = acc.draws + 1;
+      } else if ((m.homeScore > m.awayScore) === homeWasOurHomeTeam) {
+        acc.homeWins = acc.homeWins + 1;
+      } else {
+        acc.awayWins = acc.awayWins + 1;
+      }
+      return acc;
+    },
+    { homeWins: 0, awayWins: 0, draws: 0 }
+  );
+
+  const prediction = activePredictor.predict({
+    homeTeamName: match.homeTeam.name,
+    awayTeamName: match.awayTeam.name,
+    homeTeamPoints: homeStanding?.points ?? null,
+    awayTeamPoints: awayStanding?.points ?? null,
+    headToHead: headToHeadSummary,
+  });
+
   return (
     <main className="min-h-screen p-8 max-w-md mx-auto">
       <div className="text-[11px] text-[var(--color-text-muted)] mb-4">
@@ -46,27 +83,55 @@ export default async function MatchDetailPage({
       <div className="flex items-center justify-between mb-8">
         <div className="flex flex-col items-center gap-2 w-24">
           <TeamCrest crestUrl={match.homeTeam.crestUrl} size="lg" />
-          <span className="text-sm text-[var(--color-text-primary)]">{match.homeTeam.name}</span>
+          <span className="text-sm text-[var(--color-text-primary)]">
+            {match.homeTeam.name}
+          </span>
         </div>
         <ScoreDisplay homeScore={match.homeScore} awayScore={match.awayScore} />
         <div className="flex flex-col items-center gap-2 w-24">
           <TeamCrest crestUrl={match.awayTeam.crestUrl} size="lg" />
-          <span className="text-sm text-[var(--color-text-primary)]">{match.awayTeam.name}</span>
+          <span className="text-sm text-[var(--color-text-primary)]">
+            {match.awayTeam.name}
+          </span>
         </div>
       </div>
 
-      <div className="text-[11px] text-[var(--color-text-muted)] mb-3">MATCH STATS</div>
+      <div className="text-[11px] text-[var(--color-text-muted)] mb-3">
+        PREDICTION
+      </div>
+      <div className="glass p-4 mb-8">
+        <ProbabilityBar
+          home={prediction.homeWinProbability}
+          draw={prediction.drawProbability}
+          away={prediction.awayWinProbability}
+        />
+        <ul className="mt-3 flex flex-col gap-1">
+          {prediction.reasoning.map((line, i) => (
+            <li key={i} className="text-[11px] text-[var(--color-text-secondary)]">
+              {line}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="text-[11px] text-[var(--color-text-muted)] mb-3">
+        MATCH STATS
+      </div>
       {match.statistics.length === 0 ? (
         <p className="text-sm text-[var(--color-text-secondary)] mb-8">
           No stats available for this match yet.
         </p>
       ) : (
-        <div className="mb-8">{/* built once we're actually syncing statistics */}</div>
+        <div className="mb-8" />
       )}
 
-      <div className="text-[11px] text-[var(--color-text-muted)] mb-3">HEAD-TO-HEAD</div>
+      <div className="text-[11px] text-[var(--color-text-muted)] mb-3">
+        HEAD-TO-HEAD
+      </div>
       {headToHead.length === 0 ? (
-        <p className="text-sm text-[var(--color-text-secondary)]">No previous meetings on record.</p>
+        <p className="text-sm text-[var(--color-text-secondary)]">
+          No previous meetings on record.
+        </p>
       ) : (
         <div className="flex flex-col gap-2">
           {headToHead.map((m) => (
