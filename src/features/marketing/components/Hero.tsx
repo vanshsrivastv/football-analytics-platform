@@ -33,7 +33,7 @@ export function Hero({ predictionCount }: { predictionCount: number }) {
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
-        className="text-sm text-[var(--color-text-secondary)] max-w-sm mb-8"
+       className="text-3xl sm:text-4xl font-medium text-[var(--color-text-primary)] leading-tight mb-3"
       >
         Real match data and explainable predictions for the Premier League.
       </motion.p>
