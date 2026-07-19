@@ -2,19 +2,19 @@ import Link from "next/link";
 import { prisma } from "@/shared/lib/prisma";
 import { MatchCard } from "@/shared/components/MatchCard";
 import { MatchStatus } from "@prisma/client";
-
+ 
 const statusMap: Record<string, MatchStatus> = {
   live: MatchStatus.LIVE,
   upcoming: MatchStatus.SCHEDULED,
   finished: MatchStatus.FINISHED,
 };
-
+ 
 const tabs = [
   { key: "live", label: "Live" },
   { key: "upcoming", label: "Upcoming" },
   { key: "finished", label: "Finished" },
 ];
-
+ 
 export default async function MatchesPage({
   searchParams,
 }: {
@@ -24,7 +24,7 @@ export default async function MatchesPage({
   const activeTab = params.status ?? "upcoming";
   const status = statusMap[activeTab] ?? MatchStatus.SCHEDULED;
   const teamId = params.team;
-
+ 
   const matches = await prisma.match.findMany({
     where: {
       status,
@@ -37,11 +37,11 @@ export default async function MatchesPage({
     },
     orderBy: { kickoff: "asc" },
   });
-
+ 
   return (
     <main className="min-h-screen p-8">
       <h1 className="text-lg text-[var(--color-text-primary)] mb-4">Matches</h1>
-
+ 
       <div className="flex gap-5 mb-6 text-sm">
         {tabs.map((tab) => (
           <Link
@@ -57,7 +57,7 @@ export default async function MatchesPage({
           </Link>
         ))}
       </div>
-
+ 
       {teamId && (
         <Link
           href={`/matches?status=${activeTab}`}
@@ -66,7 +66,7 @@ export default async function MatchesPage({
           ✕ clear team filter
         </Link>
       )}
-
+ 
       {matches.length === 0 ? (
         <p className="text-[var(--color-text-muted)] text-sm">
           No {activeTab} matches right now.
@@ -80,4 +80,15 @@ export default async function MatchesPage({
                 homeTeamName={match.homeTeam.name}
                 awayTeamName={match.awayTeam.name}
                 homeCrestUrl={match.homeTeam.crestUrl}
-                awayCrestUrl={match.awayT
+                awayCrestUrl={match.awayTeam.crestUrl}
+                homeScore={match.homeScore}
+                awayScore={match.awayScore}
+              />
+            </Link>
+          ))}
+        </div>
+      )}
+    </main>
+  );
+}
+ 
