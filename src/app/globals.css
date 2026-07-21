@@ -23,9 +23,13 @@ html {
 }
 
 body {
-  background: var(--color-canvas);
+  background:
+    radial-gradient(circle at 20% 0%, #3a1015 0%, transparent 45%),
+    radial-gradient(circle at 80% 90%, #1a1030 0%, transparent 40%),
+    var(--color-canvas);
   color: var(--color-text-primary);
   font-family: var(--font-sans);
+  min-height: 100vh;
 }
 
 .glass {
